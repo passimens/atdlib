@@ -1,6 +1,7 @@
 # atdlib
 
-atdlib.py - Helper module for communicating with McAfee Advanced Threat Defense via REST API
+##### atdlib.py
+Helper module for communicating with McAfee Advanced Threat Defense via REST API
 
 The module exposes a part of McAfee ATD REST API through a single object atdsession.
 It allows one to:
@@ -17,9 +18,10 @@ Log level and format is controlled via atdlib logger, [logging module](https://d
 The module was written in Python 2.7 according to the [McAfee ATD API reference guide](https://kc.mcafee.com/resources/sites/MCAFEE/content/live/PRODUCT_DOCUMENTATION/26000/PD26048/en_US/ATD_3_4_8_API_Reference_Guide_revA_en_us.pdf).
 Tested with ATD v.3.4.8.x (API v.1.5.0).
 
-utests.py - unit test set for the atdlib module. Requires proper initialization of test data (comments inside).
+##### utests.py
+Unit test set for the atdlib module. Requires proper initialization of test data (comments inside).
 
-CLASSES
+##### CLASSES in atdlib.py
     
     class ATDAuthError(ATDClientError)
      |  Exception is raised when ATD box or a transparent proxy responds with HTTP 401 code

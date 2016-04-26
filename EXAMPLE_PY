@@ -1,0 +1,34 @@
+>>> import atdlib
+>>>
+>>> atd = atdlib.atdsession()
+>>>
+>>> # open new session to the ATD
+>>> atd.open('10.10.10.10', 'atduser', 'atdpass')
+True
+>>> # session was created successfully
+>>>
+>>> # upload a file for analysis and get jobId
+>>> atd.fileup('sample.exe')
+5294
+>>> # jobId is 5294
+>>>
+>>> # Get a list of job tasks
+>>> atd.jobtasks(5294)
+[u'14326']
+>>> # job initiated one task with id 14326
+>>>
+>>> # getting task status
+>>> atd.taskstatus(14326)
+1
+>>> # task completed
+>>>
+>>> # getting analysis report on json format
+>>> atd.taskreport(14326, 'json')
+' <...> '
+>>> # JSON data is printed above
+>>>
+>>> # printing analysis report to file in pdf format
+>>> with open('report.pdf', 'wb') as rep:
+...  rep.write(atd.taskreport(14326))
+...
+>>> # report contents is now printed to report.pdf file

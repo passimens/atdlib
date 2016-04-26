@@ -8,7 +8,7 @@ It allows one to:
  - check job and task status for previously submitted samples,
  - get the analysis report for a given task in a given format.
 
-Usage example is available in [EXAMPLE_PY](https://github.com/passimens/atdlib/EXAMPLE_PY) file.
+Usage example is available in [EXAMPLE_PY](EXAMPLE_PY) file.
 
 Proxy along with optional username/password can be specified through HTTP_PROXY/HTTPS_PROXY environment variable inherently to [requests library](http://docs.python-requests.org/).
 

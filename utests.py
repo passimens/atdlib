@@ -8,16 +8,16 @@ global host, user, pswd, file, srcip, md5s, jobid, taskid, jobs, sjobs, tasks, s
 
 # ----- Please verify the following test data -----
 # ---- before running to get meaningful results ---
-ssl = True							# Can be True or False
+ssl = True									# Use ssl connection. Can be True or False
 host = '169.254.254.100'					# IP-address or hostname of your ATD box
-user = 'atduser'						# Your ATD user with REST-API access
+user = 'atduser'							# Your ATD user with REST-API access
 pswd = 'atdpassword'						# The respective password
-file = 'sample.exe'						# Sample file for upload, located in the working dir
+file = 'sample.exe'							# Sample file for upload, located in the working dir
 srcip = '10.10.10.10'						# Any valid IP address for enriching sample context
-md5s = '10e4a1d2132ccb5c6759f038cdb6f3c9'			# MD5 hash sum of the sample file
-jobid = 39							# The id of an existing job on the ATD box
-taskid = 62							# The id of an existing task on the ATD box
-jobs = (39, 40, 41)						# The tuple of existing jobs' ids on the ATD box
+md5s = '10e4a1d2132ccb5c6759f038cdb6f3c9'	# MD5 hash sum of the sample file
+jobid = 39									# The id of an existing job on the ATD box
+taskid = 62									# The id of an existing task on the ATD box
+jobs = (39, 40, 41)							# The tuple of existing jobs' ids on the ATD box
 sjobs = ('39', '40', '41')					# Same as above (string values)
 tasks = (62, 63, 64)						# The tuple of existing tasks' ids on the ATD box
 stasks = ('62', '63', '64')					# Same as above (string values)
@@ -73,7 +73,7 @@ class TestATDOpenMethod(unittest.TestCase):
 			self.atd.open(host, '', pswd)
 			
 	def test_open_nonexistuname(self):
-		with self.assertRaises(ATDAuthError):
+		with self.assertRaises(ATDClientError):
 			self.atd.open(host, 'definitelynotauser', pswd)
 
 	def test_open_numpasswd(self):
@@ -86,7 +86,7 @@ class TestATDOpenMethod(unittest.TestCase):
 			
 	def test_open_wrongpasswd(self):
 		with self.assertRaises(ATDAuthError):
-			self.atd.open(host, user, 'wrongpassword')
+			self.atd.open(host, user, 'McAfee123')
 # ------------------------------------
 
 # ---- Close Method Test Case ---------
@@ -460,11 +460,11 @@ class TestATDTaskReportMethod(unittest.TestCase):
 if __name__ == '__main__':
 
 	logFormat = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-	logHandler = logging.FileHandler('utests.log')
+	logHandler = logging.FileHandler('atdlib14.log')
 	logHandler.setFormatter(logFormat)
 	mylog = logging.getLogger('atdlib')
 	mylog.addHandler(logHandler)
-	mylog.setLevel(logging.ERROR)
+	mylog.setLevel(logging.INFO)
 
 	t = {}
 	t['suiteCreate'] = unittest.TestLoader().loadTestsFromTestCase(TestATDConstructor)

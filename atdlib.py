@@ -508,8 +508,99 @@ class atdsession:
 		resp = self._reqsend(prep, self._atdhost)
 
 		return resp.content
+	
+	
+	# --- atdsession.md5report() method ---	
+	def md5report(self, md5, type="pdf"):
+		'''Gets report content for sample based on a md5 hash.
+		md5 - md5 hash to get the report for.
+		Returns report content with content type specified.
+		'''
+		
+		atdlog.info(u'------- Retrieving task report in {0} for md5 hash {1} from server {2} -------'.format(type, md5, self._atdhost))
+		
+		if not self._valid:
+			atdlog.error(u'Session is not valid. Please run open() method first.')
+			raise ATDStateError(__name__ + u': Session is not valid. Please run open() method first.')
+			
+		
+		if type not in ('html', 'txt', 'xml', 'zip', 'json', 'ioc', 'stix', 'pdf', 'sample'):
+			raise ValueError(__name__ + u': Report type requested is not supported. Supported types are: html, txt, xml, zip, json, ioc, stix, pdf, sample.')
 
+		headers = self._headers.copy()
+		headers.update({'VE-SDK-API': self._auth, 'Content-Type' : 'application/json'})
 
+		url = 'http' + ('s' if self._usessl else '') + '://' + self._atdhost + '/php/showreport.php?md5=' + str(md5) + '&iType=' + type
+		
+		atdlog.debug(u'url = "{0}", headers = "{1}"'.format(url, headers))
+		
+		req = Request('GET', url, headers=headers)
+		prep = req.prepare()
+		resp = self._reqsend(prep, self._atdhost)
+
+		return resp.content	
+
+	# --- atdsession.jobreport() method ---	
+	def jobreport(self, jobid, type="pdf"):
+		'''Gets report content for sample based on a job ID.
+		jobid - The job ID to get the report for.
+		Returns report content with content type specified.
+		'''
+		
+		atdlog.info(u'------- Retrieving task report in {0} for job id {1} from server {2} -------'.format(type, jobid, self._atdhost))
+		
+		if not self._valid:
+			atdlog.error(u'Session is not valid. Please run open() method first.')
+			raise ATDStateError(__name__ + u': Session is not valid. Please run open() method first.')
+			
+		
+		if type not in ('html', 'txt', 'xml', 'zip', 'json', 'ioc', 'stix', 'pdf', 'sample'):
+			raise ValueError(__name__ + u': Report type requested is not supported. Supported types are: html, txt, xml, zip, json, ioc, stix, pdf, sample.')
+
+		headers = self._headers.copy()
+		headers.update({'VE-SDK-API': self._auth, 'Content-Type' : 'application/json'})
+
+		url = 'http' + ('s' if self._usessl else '') + '://' + self._atdhost + '/php/showreport.php?jobId=' + str(jobid) + '&iType=' + type
+		
+		atdlog.debug(u'url = "{0}", headers = "{1}"'.format(url, headers))
+		
+		req = Request('GET', url, headers=headers)
+		prep = req.prepare()
+		resp = self._reqsend(prep, self._atdhost)
+
+		return resp.content	
+		
+
+		# --- atdsession.hashstatus() method ---
+	def hashstatus(self, md5):
+		'''Gets the whitelist/blacklist status for a MD5 hash.
+		md5 - MD5 hash to check..
+		Returns whitelist/blacklist status.
+		'''
+		
+		atdlog.info(u'------- Retrieving list status for hash {0} from server {1} -------'.format(md5, self._atdhost))
+		
+		if not self._valid:
+			atdlog.error(u'Session is not valid. Please run open() method first.')
+			raise ATDStateError(__name__ + u': Session is not valid. Please run open() method first.')
+	
+		postdata = {'data': '{"md5":' + str(md5) + '}'}
+			
+		url = 'http' + ('s' if self._usessl else '') + '://' + self._atdhost + '/php/atdHashLookup.php'
+
+		headers = self._headers.copy()
+		headers.update({'VE-SDK-API': self._auth})
+		
+		atdlog.debug(u'url = "{0}", headers = "{1}"'.format(url, headers))
+		atdlog.debug(u'postdata: {}'.format(postdata))
+
+		req = Request('POST', url, data=postdata, headers=headers)
+		prep = req.prepare()
+		resp = self._reqsend(prep, self._atdhost)
+
+		return self._parse(resp.text, lambda x: x['success']['results'])
+		
+		
 # --- Initialize module: ---
 # Disable SSL security warning
 requests.packages.urllib3.disable_warnings()

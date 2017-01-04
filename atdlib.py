@@ -508,6 +508,35 @@ class atdsession:
 		resp = self._reqsend(prep, self._atdhost)
 
 		return resp.content
+		
+	def taskreportmd5(self, md5, type="pdf"):
+		'''Gets report content for sample based on md5sum.
+		md5 - md5 to get the report for.
+		Returns report content with content type specified.
+		'''
+		
+		atdlog.info(u'------- Retrieving task report in {0} for task id {1} from server {2} -------'.format(type, md5, self._atdhost))
+		
+		if not self._valid:
+			atdlog.error(u'Session is not valid. Please run open() method first.')
+			raise ATDStateError(__name__ + u': Session is not valid. Please run open() method first.')
+			
+		
+		if type not in ('html', 'txt', 'xml', 'zip', 'json', 'ioc', 'stix', 'pdf', 'sample'):
+			raise ValueError(__name__ + u': Report type requested is not supported. Supported types are: html, txt, xml, zip, json, ioc, stix, pdf, sample.')
+
+		headers = self._headers.copy()
+		headers.update({'VE-SDK-API': self._auth, 'Content-Type' : 'application/json'})
+
+		url = 'http' + ('s' if self._usessl else '') + '://' + self._atdhost + '/php/showreport.php?md5=' + str(md5) + '&iType=' + type
+		
+		atdlog.debug(u'url = "{0}", headers = "{1}"'.format(url, headers))
+		
+		req = Request('GET', url, headers=headers)
+		prep = req.prepare()
+		resp = self._reqsend(prep, self._atdhost)
+
+		return resp.content	
 
 
 # --- Initialize module: ---

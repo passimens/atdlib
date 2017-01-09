@@ -571,8 +571,8 @@ class atdsession:
 
 		return resp.content
 
-	# --- atdsession.checklists() method ---
-	def checklists(self, md5h):
+	# --- atdsession.listlookup() method ---
+	def listlookup(self, md5h):
 		'''Checks for a hash in the local white and black lists.
 		md5h - The MD5 hash to check.
 		Returns list list status.

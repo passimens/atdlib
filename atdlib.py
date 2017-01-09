@@ -575,7 +575,7 @@ class atdsession:
 	def listlookup(self, md5h):
 		'''Checks for a hash in the local white and black lists.
 		md5h - The MD5 hash to check.
-		Returns list list status.
+		Returns black/white list indicator: 'b'|'w'|'0'.
 		'''
 
 		atdlog.info(u'------- Retrieving list status for MD5={0} from server {1} -------'.format(md5h, self._atdhost))
@@ -602,7 +602,11 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['results'])
+		try:
+			return self._parse(resp.text, lambda x: x['results'][md5h.upper()])
+		except (KeyError) as e:
+			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
+			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
 
 
 # --- Initialize module: ---

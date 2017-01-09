@@ -22,7 +22,7 @@ Tested with ATD v.3.4.8.x (API v.1.5.0).
 Unit test set for the atdlib module. Requires proper initialization of test data (comments inside).
 
 ##### CLASSES in atdlib.py
-    
+
     class ATDAuthError(ATDClientError)
      |  Exception is raised when ATD box or a transparent proxy responds with HTTP 401 code
 
@@ -101,9 +101,24 @@ Unit test set for the atdlib module. Requires proper initialization of test data
      |      Gets report content for sample based on taskid.
      |      taskid - taskId to get the report for.
      |      Returns report content with content type specified.
+     |
+     |  md5report(self, md5h, type='pdf')
+     |      Gets report content for sample based on md5 hash.
+     |      md5h - md5 hash to get the report for.
+     |      Returns report content with content type specified.
+     |
+     |  jobreport(self, jobid, type='zip')
+     |      Gets report content for sample based on jobid.
+     |      jobid - The job ID to get the report for.
+     |      Returns report content with content type specified.
      |  
      |  taskstatus(self, taskid)
      |      Gets task status with generic sample info.
      |      taskid - taskId to check brief analysis status.
      |      Returns tasks istate (1|2 - completed, 3 - being analyzed, 4 - waiting, -1 - failed).
+     |
+     |  listlookup(self, md5h)
+     |      Checks for a hash in the local white and black lists.
+     |      md5h - The MD5 hash to check.
+     |      Returns list status (w - in whitelist, b - in blacklist, 0 - not in either list).
      |  

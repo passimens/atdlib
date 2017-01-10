@@ -613,11 +613,7 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		try:
-			return self._parse(resp.text, lambda x: x['results'][md5h.upper()])
-		except (KeyError) as e:
-			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
-			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
+		return self._parse(resp.text, lambda x: x['results'][md5h.upper()])
 
 
 # --- Initialize module: ---

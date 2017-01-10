@@ -291,7 +291,9 @@ class atdsession:
 
 		if not isinstance(md5h, str): raise TypeError(__name__ + u': md5h parameter must be a string')
 
-		if not md5h: raise ValueError(__name__ + u': md5h parameter cannot be empty')
+		if not re.search(r'([a-fA-F\d]{32})', md5h):
+			atdlog.error(u'"{0}" is not a valid MD5 hash.'.format(md5h))
+			raise ValueError(__name__ + u': md5h parameter must be a valid hash')
 
 		headers = self._headers.copy()
 		headers.update({'VE-SDK-API': self._auth, 'Content-Type' : 'application/json'})
@@ -322,7 +324,9 @@ class atdsession:
 
 		if not isinstance(md5h, str): raise TypeError(__name__ + u': md5h parameter must be a string')
 
-		if not md5h: raise ValueError(__name__ + u': md5h parameter cannot be empty')
+		if not re.search(r'([a-fA-F\d]{32})', md5h):
+			atdlog.error(u'"{0}" is not a valid MD5 hash.'.format(md5h))
+			raise ValueError(__name__ + u': md5h parameter must be a valid hash')
 
 		headers = self._headers.copy()
 		headers.update({'VE-SDK-API': self._auth, 'Content-Type' : 'application/json'})
@@ -524,7 +528,12 @@ class atdsession:
 			atdlog.error(u'Session is not valid. Please run open() method first.')
 			raise ATDStateError(__name__ + u': Session is not valid. Please run open() method first.')
 
+		if not isinstance(md5h, str): raise TypeError(__name__ + u': md5h parameter must be a string')
 
+		if not re.search(r'([a-fA-F\d]{32})', md5h):
+			atdlog.error(u'"{0}" is not a valid MD5 hash.'.format(md5h))
+			raise ValueError(__name__ + u': md5h parameter must be a valid hash')
+			
 		if type not in ('html', 'txt', 'xml', 'zip', 'json', 'ioc', 'stix', 'pdf', 'sample'):
 			raise ValueError(__name__ + u': Report type requested is not supported. Supported types are: html, txt, xml, zip, json, ioc, stix, pdf, sample.')
 
@@ -571,11 +580,11 @@ class atdsession:
 
 		return resp.content
 
-	# --- atdsession.checklists() method ---
-	def checklists(self, md5h):
+	# --- atdsession.listlookup() method ---
+	def listlookup(self, md5h):
 		'''Checks for a hash in the local white and black lists.
 		md5h - The MD5 hash to check.
-		Returns list list status.
+		Returns black/white list indicator: 'b'|'w'|'0'.
 		'''
 
 		atdlog.info(u'------- Retrieving list status for MD5={0} from server {1} -------'.format(md5h, self._atdhost))
@@ -584,8 +593,10 @@ class atdsession:
 			atdlog.error(u'Session is not valid. Please run open() method first.')
 			raise ATDStateError(__name__ + u': Session is not valid. Please run open() method first.')
 
-		if not re.search(r"([a-fA-F\d]{32})", md5h):
-			atdlog.error(u'You must enter a valid MD5 hash.')
+		if not isinstance(md5h, str): raise TypeError(__name__ + u': md5h parameter must be a string')
+
+		if not re.search(r'([a-fA-F\d]{32})', md5h):
+			atdlog.error(u'"{0}" is not a valid MD5 hash.'.format(md5h))
 			raise ValueError(__name__ + u': md5h parameter must be a valid hash')
 
 		postdata = {'data': '{"md5":' + '"' + md5h + '"' + '}'}
@@ -602,7 +613,7 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['results'])
+		return self._parse(resp.text, lambda x: x['results'][md5h.upper()])
 
 
 # --- Initialize module: ---

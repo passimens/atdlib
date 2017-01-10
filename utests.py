@@ -176,9 +176,9 @@ class TestATD_MD5LogMethod(unittest.TestCase):
 		self.assertEqual(self.ret['success'], True)
 		#print self.ret
 
-	def test__md5log_empty_md5(self):
+	def test__md5log_invalid_md5(self):
 		with self.assertRaises(ValueError):
-			self.ret = self.atd._md5log('')
+			self.ret = self.atd._md5log('abcdefghijklmnopqrstuvwxyz')
 			
 	def test__md5log_num_md5(self):
 		with self.assertRaises(TypeError):
@@ -212,9 +212,9 @@ class TestATDMD5StatusMethod(unittest.TestCase):
 		self.assertEqual(self.ret['severity'], -6)
 		#print self.ret
 
-	def test_md5status_empty_md5(self):
+	def test_md5status_invalid_md5(self):
 		with self.assertRaises(ValueError):
-			self.ret = self.atd.md5status('')
+			self.ret = self.atd.md5status('abcdefghijklmnopqrstuvwxyz')
 			
 	def test_md5status_num_md5(self):
 		with self.assertRaises(TypeError):
@@ -456,6 +456,102 @@ class TestATDTaskReportMethod(unittest.TestCase):
 			self.ret = self.atd.taskreport(taskid=taskid, type='nosuchtype')
 # ------------------------------------
 
+# ---- JobReport Method Test Case ---------
+class TestATDJobReportMethod(unittest.TestCase):
+
+	def setUp(self):
+		self.atd = atdsession(ssl=ssl)
+		self.atd.open(host, user, pswd)
+		self.ret = None
+		
+	def tearDown(self):
+		self.atd.close()
+		del self.atd
+		del self.ret
+
+	def test_jobreport_int(self):
+		self.ret = self.atd.jobreport(jobid)
+		self.assertGreater(len(self.ret), 0)
+
+	def test_jobreport_intstr(self):
+		self.ret = self.atd.jobreport(str(jobid))
+		self.assertGreater(len(self.ret), 0)
+		
+	def test_jobreport_list(self):
+		with self.assertRaises(TypeError):
+			self.ret = self.atd.jobreport(list(jobid))
+			
+	def test_jobreport_nonexist(self):
+		# current API implementation returns ATDClientError
+		with self.assertRaises(ATDClientError):
+			self.ret = self.atd.jobreport(65535)
+
+	def test_jobreport_invalidreptype(self):
+		with self.assertRaises(ValueError):
+			self.ret = self.atd.jobreport(jobid=jobid, type='nosuchtype')
+# ------------------------------------
+
+# ---- MD5Report Method Test Case ---------
+class TestATDMD5ReportMethod(unittest.TestCase):
+
+	def setUp(self):
+		self.atd = atdsession(ssl=ssl)
+		self.atd.open(host, user, pswd)
+		self.ret = None
+		
+	def tearDown(self):
+		self.atd.close()
+		del self.atd
+		del self.ret
+
+	def test_md5report(self):
+		self.ret = self.atd.md5report(md5s)
+		self.assertGreater(len(self.ret), 0)
+
+	def test_md5report_nonexist(self):
+		# current API implementation returns ATDServerError 'submission not found'
+		with self.assertRaises(ATDServerError):
+			self.ret = self.atd.md5report('00000000000000000000000000000000')
+			
+	def test_md5report_invalid(self):
+		with self.assertRaises(ValueError):
+			self.ret = self.atd.md5report('abcdefghijklmnopqrstuvwxyz')
+
+	def test_md5report_numeric(self):
+		with self.assertRaises(TypeError):
+			self.ret = self.atd.md5report(123)
+# ------------------------------------
+
+# ---- ListLookup Method Test Case ---------
+class TestATDListLookupMethod(unittest.TestCase):
+
+	def setUp(self):
+		self.atd = atdsession(ssl=ssl)
+		self.atd.open(host, user, pswd)
+		self.ret = None
+		
+	def tearDown(self):
+		self.atd.close()
+		del self.atd
+		del self.ret
+
+	def test_listlookup(self):
+		self.ret = self.atd.listlookup(md5s)
+		self.assertIn(self.ret, ('0', 'w', 'b'))
+
+	def test_listlookup_nonexist(self):
+		self.ret = self.atd.listlookup('00000000000000000000000000000000')
+		self.assertEquals(self.ret, '0')
+			
+	def test_listlookup_invalid(self):
+		with self.assertRaises(ValueError):
+			self.ret = self.atd.listlookup('abcdefghijklmnopqrstuvwxyz')
+
+	def test_listlookup_numeric(self):
+		with self.assertRaises(TypeError):
+			self.ret = self.atd.listlookup(123)
+# ------------------------------------
+
 # ----------- Main Unit Test -------------
 if __name__ == '__main__':
 
@@ -478,8 +574,12 @@ if __name__ == '__main__':
 	t['suiteJobTasks'] = unittest.TestLoader().loadTestsFromTestCase(TestATDJobTasksMethod)
 	t['suiteBulkStatus'] = unittest.TestLoader().loadTestsFromTestCase(TestATDBulkStatusMethod)
 	t['suiteTaskReport'] = unittest.TestLoader().loadTestsFromTestCase(TestATDTaskReportMethod)
+	t['suiteJobReport'] = unittest.TestLoader().loadTestsFromTestCase(TestATDJobReportMethod)
+	t['suiteMD5Report'] = unittest.TestLoader().loadTestsFromTestCase(TestATDMD5ReportMethod)
+	t['suiteListLookup'] = unittest.TestLoader().loadTestsFromTestCase(TestATDListLookupMethod)
 	
 	alltests = unittest.TestSuite(t.values())
-	#alltests = unittest.TestSuite(t['suiteClose'])
+	#alltests = unittest.TestSuite(t['suiteListLookup'])
 	
 	unittest.TextTestRunner(verbosity=5).run(alltests)
+	

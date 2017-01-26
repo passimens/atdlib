@@ -332,7 +332,7 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		count = int( self._parse(resp.text, lambda x: int(x['totalCount'])) )
+		count = self._parse(resp.text, lambda x: int(x['totalCount']))
 
 		if count > 0:
 			log = self._parse(resp.text, lambda x: x['results'])

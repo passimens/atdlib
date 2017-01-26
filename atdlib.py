@@ -256,16 +256,6 @@ class atdsession:
 
 		prep = req.prepare()
 
-		'''
-		newbody = ''
-		for line in prep.body.splitlines(True) :
-			if "Content-Disposition: form-data; name=\"amas_filename\"; filename*=utf-8''" in line :
-				line = line.replace("filename*=utf-8''", "filename=\"").replace("\r\n","\"\r\n")
-				line = urllib.unquote(line)
-				#line = requests.packages.urllib3.unquote(line)
-
-			newbody += line
-		'''
 		li = str.find(prep.body, "Content-Disposition: form-data; name=\"amas_filename\"; filename*=utf-8''")
 		if li >= 0:
 			ri = str.find(prep.body, "\r\n", li)
@@ -276,7 +266,7 @@ class atdsession:
 
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['subId'])
+		return self._parse(resp.text, lambda x: int(x['subId']))
 
 
 	# --- atdsession.md5log() method ---
@@ -342,7 +332,7 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		count = int( self._parse(resp.text, lambda x: x['totalCount']) )
+		count = int( self._parse(resp.text, lambda x: int(x['totalCount'])) )
 
 		if count > 0:
 			log = self._parse(resp.text, lambda x: x['results'])
@@ -358,9 +348,9 @@ class atdsession:
 					sevKey = 'severity'
 				
 				# Return latest result
-				return {'status': rr[0]['status'], 'jobid': rr[0]['jobid'], 'severity': rr[0][sevKey]}
+				return {'status': int(rr[0]['status']), 'jobid': int(rr[0]['jobid']), 'severity': int(rr[0][sevKey])}
 				
-			except (KeyError, IndexError) as e:
+			except (KeyError, IndexError, ValueError) as e:
 				atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
 				raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
 
@@ -396,7 +386,16 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x)
+		#enforce int values in return dict
+		result = self._parse(resp.text, lambda x: x)
+
+		try:
+			typedRes = {'status': int(result['status']), 'severity': int(result['severity']) if 'severity' in result else -6}
+		except(ValueError):
+			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
+			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
+			
+		return typedRes
 
 
 	# --- atdsession.taskstatus() method ---
@@ -425,7 +424,8 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['results']['istate'])
+		#enforce int values in return dict
+		return self._parse(resp.text, lambda x: int(x['results']['istate']))
 
 
 	# --- atdsession.jobtasks() method ---
@@ -454,7 +454,15 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['result']['taskIdList'].split(',') if len(x['result']) > 0 else [])
+		#enforce int values in return dict
+		result = self._parse(resp.text, lambda x: x['result']['taskIdList'].split(',') if len(x['result']) > 0 else [])
+		try:
+			typedRes = [int(v) for v in result]
+		except(ValueError):
+			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
+			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
+			
+		return typedRes
 
 
 	# --- atdsession.bulkstatus() method ---
@@ -492,7 +500,16 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['results']['bulkresponse']['status'])
+		# enforce int values in return dict
+		result = self._parse(resp.text, lambda x: x['results']['bulkresponse']['status'])
+
+		try:
+			typedRes = [ { k: int(v) for (k ,v) in d.items() } for d in result ]
+		except(ValueError):
+			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
+			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
+			
+		return typedRes
 
 
 	# --- atdsession.taskreport() method ---

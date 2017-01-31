@@ -1,5 +1,5 @@
 '''
-ATDLib v.1.4. (c) 2015 Valeriy V. Filin (valerii.filin@gmail.com).
+ATDLib v.1.6. (c) 2017 Valeriy V. Filin (valerii.filin@gmail.com).
 Exposes a part of McAfee ATD REST API: open session, upload a file, get job/task status, get task report, close session.
 Proxy along with optional username/password can be specified through HTTP_PROXY/HTTPS_PROXY environment variable inherently to requests library.
 Log level and format is controlled via logging module, atdlib logger.
@@ -12,6 +12,7 @@ import base64
 import urllib
 import logging
 import re
+from distutils.version import LooseVersion
 
 global atdlog
 
@@ -58,6 +59,7 @@ class atdsession:
 
 		# ------- Private class instance attributes -------
 		self._atdhost = ''	# Hostname of an ATD box to connect to
+		self._atdver = '' # ATD software version running on the box
 		self._userid = ''	# User id returned on successful authentication
 		self._sessid = ''	# Session id returned on successful authentication
 		self._auth = ''		# Encoded pair "_userid : _sessid"
@@ -171,6 +173,7 @@ class atdsession:
 		resp = self._reqsend(prep, host)
 
 		self._userid, self._sessid = self._parse(resp.text, lambda x: (x['results']['userId'], x['results']['session']))
+		self._atdver = self._parse(resp.text, lambda x: x['results']['matdVersion'])
 
 		self._atdhost = host
 		self._auth = base64.b64encode(self._sessid + ':' + self._userid)
@@ -253,16 +256,6 @@ class atdsession:
 
 		prep = req.prepare()
 
-		'''
-		newbody = ''
-		for line in prep.body.splitlines(True) :
-			if "Content-Disposition: form-data; name=\"amas_filename\"; filename*=utf-8''" in line :
-				line = line.replace("filename*=utf-8''", "filename=\"").replace("\r\n","\"\r\n")
-				line = urllib.unquote(line)
-				#line = requests.packages.urllib3.unquote(line)
-
-			newbody += line
-		'''
 		li = str.find(prep.body, "Content-Disposition: form-data; name=\"amas_filename\"; filename*=utf-8''")
 		if li >= 0:
 			ri = str.find(prep.body, "\r\n", li)
@@ -273,7 +266,7 @@ class atdsession:
 
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['subId'])
+		return self._parse(resp.text, lambda x: int(x['subId']))
 
 
 	# --- atdsession.md5log() method ---
@@ -339,16 +332,25 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		count = int( self._parse(resp.text, lambda x: x['totalCount']) )
+		count = self._parse(resp.text, lambda x: int(x['totalCount']))
 
 		if count > 0:
 			log = self._parse(resp.text, lambda x: x['results'])
 			# Sort previous submissions based on lastChange time
 			try:
+			
 				rr = sorted(log, key=lambda x: x['lastChange'], reverse=True)
+
+				# Modify Severity key based on ATD version
+				if LooseVersion(self._atdver) >= LooseVersion('3.8.0'):
+					sevKey = 'confidence'
+				else :
+					sevKey = 'severity'
+				
 				# Return latest result
-				return {'status': rr[0]['status'], 'jobid': rr[0]['jobid'], 'severity': rr[0]['severity']}
-			except (KeyError, IndexError) as e:
+				return {'status': int(rr[0]['status']), 'jobid': int(rr[0]['jobid']), 'severity': int(rr[0][sevKey])}
+				
+			except (KeyError, IndexError, ValueError) as e:
 				atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
 				raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
 
@@ -384,7 +386,16 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x)
+		#enforce int values in return dict
+		result = self._parse(resp.text, lambda x: x)
+
+		try:
+			typedRes = {'status': int(result['status']), 'severity': int(result['severity']) if 'severity' in result else -6}
+		except(ValueError):
+			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
+			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
+			
+		return typedRes
 
 
 	# --- atdsession.taskstatus() method ---
@@ -413,7 +424,8 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['results']['istate'])
+		#enforce int values in return dict
+		return self._parse(resp.text, lambda x: int(x['results']['istate']))
 
 
 	# --- atdsession.jobtasks() method ---
@@ -442,7 +454,15 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['result']['taskIdList'].split(',') if len(x['result']) > 0 else [])
+		#enforce int values in return dict
+		result = self._parse(resp.text, lambda x: x['result']['taskIdList'].split(',') if len(x['result']) > 0 else [])
+		try:
+			typedRes = [int(v) for v in result]
+		except(ValueError):
+			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
+			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
+			
+		return typedRes
 
 
 	# --- atdsession.bulkstatus() method ---
@@ -480,7 +500,16 @@ class atdsession:
 		prep = req.prepare()
 		resp = self._reqsend(prep, self._atdhost)
 
-		return self._parse(resp.text, lambda x: x['results']['bulkresponse']['status'])
+		# enforce int values in return dict
+		result = self._parse(resp.text, lambda x: x['results']['bulkresponse']['status'])
+
+		try:
+			typedRes = [ { k: int(v) for (k ,v) in d.items() } for d in result ]
+		except(ValueError):
+			atdlog.error(u'ATD box {0} returned unexpected data.'.format(self._atdhost))
+			raise ATDError(__name__ + u': ATD box {0} returned unexpected data.'.format(self._atdhost))
+			
+		return typedRes
 
 
 	# --- atdsession.taskreport() method ---
